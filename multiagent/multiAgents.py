@@ -69,12 +69,45 @@ class ReflexAgent(Agent):
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
-        newFood = successorGameState.getFood()
+        newFood = successorGameState.getFood().asList()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        # Find positions of scared and unscared ghosts
+        new_ghost_pos = [ghost.getPosition() for ghost in newGhostStates if not ghost.scaredTimer]
+        new_scared_pos = [ghost.getPosition() for ghost in newGhostStates if ghost.scaredTimer]
+
+        # Find closest active ghost
+        if new_ghost_pos:
+          closest_active_ghost = min(map(lambda ghostPos: util.manhattanDistance(newPos, ghostPos), new_ghost_pos))
+        else:
+          closest_active_ghost = 100000
+
+        # Find closest scared ghost
+        if new_scared_pos:
+          closest_scared_ghost = min(map(lambda ghostPos: util.manhattanDistance(newPos, ghostPos), new_scared_pos))
+        else:
+          closest_scared_ghost = 0
+
+        # Find closest food
+        if not newFood:
+          closest_food = -100
+        else:
+          closest_food = min(map(lambda foodPos: util.manhattanDistance(newPos, foodPos), newFood))
+
+        # Total food left
+        food_left = len(newFood)
+
+        # Total capsules left
+        capsules_left = len(currentGameState.getCapsules())
+
+        print "closest_active_ghost " + str(closest_active_ghost)
+        print "closest_scared_ghost " + str(closest_scared_ghost)
+        print "food left " + str(food_left)
+        if closest_active_ghost < 2:
+          return -100000000
+        return float(1.0/closest_active_ghost) * -12 + (-1.5 * closest_food) + \
+              (-20 * food_left) + (-4 * capsules_left) + scoreEvaluationFunction(successorGameState)
 
 def scoreEvaluationFunction(currentGameState):
     """
