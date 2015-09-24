@@ -161,8 +161,51 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # Rather than directly calling minimax on pacman, call on each of his moves to determine the best move
+        temp = float("-inf")
+        bestAction = None
+        for action in gameState.getLegalActions(0):
+            best_value = self.minimax_helper(gameState.generateSuccessor(0, action), 1, self.depth)
+            # If the minimax result was better on this action then keep that in temp
+            if best_value > temp or not bestAction:
+                bestAction = action
+                temp = best_value
+        return bestAction
+
+    def minimax_helper(self, state, agentIndex, depth):
+        """ A recursive minimax helper function
+            ARGS 
+            state: the gameState we are inspecting
+            agentIndex: the current agent Index, 0 is pacman, ghosts are >=1
+            depth: the depth left that we have to explore
+        """
+        # Terminal states
+        if depth == 0 or state.isWin() or state.isLose():
+            return self.evaluationFunction(state)
+
+        # If we are pacman 
+        if agentIndex == 0:
+            bestValue = float("-inf")
+            for action in state.getLegalActions(agentIndex):
+                bestValue = max(bestValue, self.minimax_helper(state.generateSuccessor(agentIndex, action), 
+                    agentIndex + 1, depth))
+
+        # If we are the last ghost (need to decrease depth here)
+        elif agentIndex == (state.getNumAgents() - 1):
+            bestValue = float("inf")
+            for action in state.getLegalActions(agentIndex):
+                bestValue = min(bestValue, self.minimax_helper(state.generateSuccessor(agentIndex, action),
+                    0, depth-1))
+
+        # If we are a ghost but not the last one
+        else:
+            bestValue = float("inf")
+            for action in state.getLegalActions(agentIndex):
+                bestValue = min(bestValue, self.minimax_helper(state.generateSuccessor(agentIndex, action),
+                    agentIndex + 1, depth))  
+        
+        return bestValue      
+    
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
