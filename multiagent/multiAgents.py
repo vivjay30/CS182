@@ -165,14 +165,14 @@ class MinimaxAgent(MultiAgentSearchAgent):
         temp = float("-inf")
         bestAction = None
         for action in gameState.getLegalActions(0):
-            best_value = self.minimax_helper(gameState.generateSuccessor(0, action), 1, self.depth)
+            best_value = self.minimaxHelper(gameState.generateSuccessor(0, action), 1, self.depth)
             # If the minimax result was better on this action then keep that in temp
             if best_value > temp or not bestAction:
                 bestAction = action
                 temp = best_value
         return bestAction
 
-    def minimax_helper(self, state, agentIndex, depth):
+    def minimaxHelper(self, state, agentIndex, depth):
         """ A recursive minimax helper function
             ARGS 
             state: the gameState we are inspecting
@@ -187,21 +187,21 @@ class MinimaxAgent(MultiAgentSearchAgent):
         if agentIndex == 0:
             bestValue = float("-inf")
             for action in state.getLegalActions(agentIndex):
-                bestValue = max(bestValue, self.minimax_helper(state.generateSuccessor(agentIndex, action), 
+                bestValue = max(bestValue, self.minimaxHelper(state.generateSuccessor(agentIndex, action), 
                     agentIndex + 1, depth))
 
         # If we are the last ghost (need to decrease depth here)
         elif agentIndex == (state.getNumAgents() - 1):
             bestValue = float("inf")
             for action in state.getLegalActions(agentIndex):
-                bestValue = min(bestValue, self.minimax_helper(state.generateSuccessor(agentIndex, action),
+                bestValue = min(bestValue, self.minimaxHelper(state.generateSuccessor(agentIndex, action),
                     0, depth-1))
 
         # If we are a ghost but not the last one
         else:
             bestValue = float("inf")
             for action in state.getLegalActions(agentIndex):
-                bestValue = min(bestValue, self.minimax_helper(state.generateSuccessor(agentIndex, action),
+                bestValue = min(bestValue, self.minimaxHelper(state.generateSuccessor(agentIndex, action),
                     agentIndex + 1, depth))  
         
         return bestValue      
@@ -217,7 +217,57 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        alpha = float("-inf")
+        bestValue = float("-inf")
+        bestAction = None
+        # Run alpha beta pruning on each possible action, update alpha but beta stays the same
+        for action in gameState.getLegalActions(0):
+            currentValue = self.alphaBetaHelper(gameState.generateSuccessor(0, action), 1, self.depth, alpha, float("inf"))
+            # If the minimax result was better on this action then keep that in temp
+            if currentValue > bestValue or not bestAction:
+                bestAction = action
+                bestValue = currentValue
+                # It's important that the next action we try one has the best alpha, ie the best move so far, but beta is still inf
+                #if v > beta:
+                 #   return bestAction
+                alpha = max(alpha, currentValue)
+        return bestAction
+
+    def alphaBetaHelper(self, gameState, agentIndex, depth, alpha, beta):
+        if depth == 0 or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        # If it's the maximizing player
+        if agentIndex == 0:
+            v = float("-inf")
+            for action in gameState.getLegalActions(agentIndex):
+                v = max(v, self.alphaBetaHelper(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, depth, alpha, beta))
+                if v > beta:
+                    #print "Pruned here1"
+                    return v
+                alpha = max(alpha, v)
+            return v
+
+        elif agentIndex == (gameState.getNumAgents() - 1):
+            v = float("inf")
+            for action in gameState.getLegalActions(agentIndex):
+                v = min(v, self.alphaBetaHelper(gameState.generateSuccessor(agentIndex, action), 0, depth - 1, alpha, beta))
+                if v < alpha:
+                    #print "Pruned here2"
+                    return v
+                beta = min(beta, v)
+            return v
+
+        else:
+            v = float("inf")
+            for action in gameState.getLegalActions(agentIndex):
+                v = min(v, self.alphaBetaHelper(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, depth, alpha, beta))
+                if v < alpha:
+                    #print "Pruned here3"
+                    return v
+                beta = min(beta, v)
+            return v
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
