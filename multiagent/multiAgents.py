@@ -12,11 +12,21 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
+
 from util import manhattanDistance
 from game import Directions
 import random, util
 
 from game import Agent
+
+
+
+##############################################################
+#               Partners for this problem set:               #
+#                   1. Vivek Jayaram                         #
+#                   2. Saroj Kandel                          #
+##############################################################
+
 
 class ReflexAgent(Agent):
     """
@@ -243,17 +253,15 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             for action in gameState.getLegalActions(agentIndex):
                 v = max(v, self.alphaBetaHelper(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, depth, alpha, beta))
                 if v > beta:
-                    #print "Pruned here1"
                     return v
                 alpha = max(alpha, v)
             return v
-
+        
         elif agentIndex == (gameState.getNumAgents() - 1):
             v = float("inf")
             for action in gameState.getLegalActions(agentIndex):
                 v = min(v, self.alphaBetaHelper(gameState.generateSuccessor(agentIndex, action), 0, depth - 1, alpha, beta))
                 if v < alpha:
-                    #print "Pruned here2"
                     return v
                 beta = min(beta, v)
             return v
@@ -263,7 +271,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             for action in gameState.getLegalActions(agentIndex):
                 v = min(v, self.alphaBetaHelper(gameState.generateSuccessor(agentIndex, action), agentIndex + 1, depth, alpha, beta))
                 if v < alpha:
-                    #print "Pruned here3"
                     return v
                 beta = min(beta, v)
             return v
@@ -273,26 +280,101 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     """
       Your expectimax agent (question 4)
     """
-
     def getAction(self, gameState):
         """
           Returns the expectimax action using self.depth and self.evaluationFunction
-
           All ghosts should be modeled as choosing uniformly at random from their
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        actions = gameState.getLegalActions(0)
+        maxVal = float('-Inf')
 
-def betterEvaluationFunction(currentGameState):
-    """
-      Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
+        bestAction = 0
+        for action in actions:
+            currentDepth = 0
+            currState = gameState.generateSuccessor(0, action)
+            currMax = self.helperExpectedVal (currState, currentDepth, 1)
+            
+            if currMax > maxVal:
+                maxVal = currMax
+                bestAction = action
+        return bestAction
+    
+    def helperMaxVal (self, state, depth):
+        depth += 1
+        #if the state is the terminal state, just return the eval func value
+        if (depth == self.depth) or (state.isWin()) or (state.isLose()):
+            return self.evaluationFunction(state)
+        
+        else:
+            maxVal = float('-Inf')
+            # get the maximum value out of all actions
+            for action in state.getLegalActions(0):
+                maxVal = max(maxVal, self.helperExpectedVal (state.generateSuccessor(0, action), depth, 1))
+            return maxVal
+
+    def helperExpectedVal (self, state, depth, numGhosts):
+        # if the state is the terminal state, just return the eval func value
+        if (depth == self.depth) or (state.isWin()) or (state.isLose()):
+            return self.evaluationFunction(state)
+        
+        else:
+            expectedVal = 0
+            for action in state.getLegalActions(numGhosts):
+                # if all ghosts remaining
+                if numGhosts == state.getNumAgents() - 1:
+                    maxValState = state.generateSuccessor(numGhosts,action)
+                    numGhostActions = len(state.getLegalActions(numGhosts))
+                    maxVal = (self.helperMaxVal(maxValState, depth))/numGhostActions
+                    expectedVal += maxVal
+
+                else:
+                    eValState = state.generateSuccessor(numGhosts,action)
+                    numGhostActions = len(state.getLegalActions(numGhosts))
+                    eVal = self.helperExpectedVal(eValState, depth, numGhosts + 1)/ numGhostActions
+                    expectedVal += eVal
+                    
+            return expectedVal   
+
+"""def betterEvaluationFunction(currentGameState)Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
       evaluation function (question 5).
 
+      DESCRIPTION: <write something here so we know what you did>*** YOUR CODE HERE ***"
+    util.raiseNotDefined()"""
+
+def betterEvaluationFunction(currentGameState):
+     """
+      Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
+      evaluation function (question 5).
+    
       DESCRIPTION: <write something here so we know what you did>
-    """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+       I built from the previous evaluation function that was given to us
+       I first initialize our heuristic to zero, and add the number of moves
+       that each ghost will remain scared for. I then calculate manhattan distance
+       from pacman's position to each of the ghost's position. After that, I take the minimum
+       of all the distances and subtracted 2 times that from my heuristic function
+       Then I add the current score to the heuristic.
+     """
+     "*** YOUR CODE HERE ***"
+     # useful numbers from the previous evaluation function
+     newPos = currentGameState.getPacmanPosition()
+     newGhostStates = currentGameState.getGhostStates()
+     newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+    
+     heuristic = 0
+     
+     distancesToGhost = []
+     for item in newGhostStates:
+         distancesToGhost += [manhattanDistance(item.getPosition(),newPos)]
+     
+     for item in newScaredTimes:
+         heuristic += item
+         
+     heuristic -= min(distancesToGhost) * 2
+     heuristic += currentGameState.getScore()
+     return heuristic
+
 
 # Abbreviation
 better = betterEvaluationFunction
